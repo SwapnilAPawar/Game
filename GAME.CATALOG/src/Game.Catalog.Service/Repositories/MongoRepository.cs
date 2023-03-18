@@ -8,34 +8,32 @@ using MongoDB.Driver;
 namespace Game.Catalog.Service.Repositories
 {
 
-    public class ItemRepository : IItemRepository
+    public class MongoRepository<T> : IRepository<T> where T : IEntity
     {
-        //Similar to table in relational database.
-        private const string collectionName = "items";
 
         //instance of mongo db collection
-        private readonly IMongoCollection<Item> dbCollection;
+        private readonly IMongoCollection<T> dbCollection;
 
         //used to build filter to query and fetch records from mongo db
-        private readonly FilterDefinitionBuilder<Item> filterBuilder = Builders<Item>.Filter;
+        private readonly FilterDefinitionBuilder<T> filterBuilder = Builders<T>.Filter;
 
-        public ItemRepository(IMongoDatabase database)
+        public MongoRepository(IMongoDatabase database, string collectionName)
         {
-            dbCollection = database.GetCollection<Item>(collectionName);
+            dbCollection = database.GetCollection<T>(collectionName);
         }
 
-        public async Task<IReadOnlyCollection<Item>> GetAllItemsAsync()
+        public async Task<IReadOnlyCollection<T>> GetAllAsync()
         {
             return await dbCollection.Find(filterBuilder.Empty).ToListAsync();
         }
 
-        public async Task<Item> GetItemAsync(Guid id)
+        public async Task<T> GetAsync(Guid id)
         {
-            FilterDefinition<Item> filter = filterBuilder.Eq(entity => entity.Id, id);
+            FilterDefinition<T> filter = filterBuilder.Eq(entity => entity.Id, id);
             return await dbCollection.Find(filter).FirstOrDefaultAsync();
         }
 
-        public async Task CreateAsync(Item entity)
+        public async Task CreateAsync(T entity)
         {
             if (entity == null)
             {
@@ -44,23 +42,23 @@ namespace Game.Catalog.Service.Repositories
             await dbCollection.InsertOneAsync(entity);
         }
 
-        public async Task UpdateAsync(Item entity)
+        public async Task UpdateAsync(T entity)
         {
             if (entity == null)
             {
                 throw new ArgumentNullException(nameof(entity));
             }
-            FilterDefinition<Item> filter = filterBuilder.Eq(exEntity => exEntity.Id, entity.Id);
+            FilterDefinition<T> filter = filterBuilder.Eq(exEntity => exEntity.Id, entity.Id);
             await dbCollection.ReplaceOneAsync(filter, entity);
         }
 
-        public async Task RemoveAsync(Item entity)
+        public async Task RemoveAsync(T entity)
         {
             if (entity == null)
             {
                 throw new ArgumentNullException(nameof(entity));
             }
-            FilterDefinition<Item> filter = filterBuilder.Eq(exEntity => exEntity.Id, entity.Id);
+            FilterDefinition<T> filter = filterBuilder.Eq(exEntity => exEntity.Id, entity.Id);
             await dbCollection.DeleteOneAsync(filter);
         }
     }

@@ -13,9 +13,9 @@ namespace Game.Catalog.Service.Controllers
     [Route("api/[controller]")]
     public class ItemsController : ControllerBase
     {
-        private readonly IItemRepository itemRepository;
+        private readonly IRepository<Item> itemRepository;
 
-        public ItemsController(IItemRepository itemRepository)
+        public ItemsController(IRepository<Item> itemRepository)
         {
             this.itemRepository = itemRepository;
         }
@@ -23,14 +23,14 @@ namespace Game.Catalog.Service.Controllers
         [HttpGet]
         public async Task<IEnumerable<ItemDto>> GetAllAsync()
         {
-            var items = (await itemRepository.GetAllItemsAsync()).Select(x => x.AsDto());
+            var items = (await itemRepository.GetAllAsync()).Select(x => x.AsDto());
             return items;
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult> GetByIdAsync(Guid id)
         {
-            var item = await itemRepository.GetItemAsync(id);
+            var item = await itemRepository.GetAsync(id);
             if (item == null)
             {
                 return NotFound("Record not found. Please verify if payload/parameters are correct.");
@@ -55,7 +55,7 @@ namespace Game.Catalog.Service.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateItemAsync(Guid id, UpdateDto updateDto)
         {
-            var existingItem = (await itemRepository.GetItemAsync(id));
+            var existingItem = (await itemRepository.GetAsync(id));
             if (existingItem == null)
             {
                 return NotFound("Record not found. Please verify if payload/parameters are correct.");
@@ -72,7 +72,7 @@ namespace Game.Catalog.Service.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteItemAsync(Guid id)
         {
-            var existingItem = (await itemRepository.GetItemAsync(id));
+            var existingItem = (await itemRepository.GetAsync(id));
             if (existingItem == null)
             {
                 return NotFound("Record not found. Please verify if payload/parameters are correct.");
