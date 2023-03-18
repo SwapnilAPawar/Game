@@ -1,15 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Game.Catalog.Service.Entities;
-using Game.Catalog.Service.Settings;
+using Game.Common.Settings;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 
-namespace Game.Catalog.Service.Repositories
+namespace Game.Common.MongoDB
 {
     public static class Extensions
     {
@@ -39,12 +36,12 @@ namespace Game.Catalog.Service.Repositories
         public static IServiceCollection AddRepository<T>(this IServiceCollection services, string collectionName)
         where T : IEntity
         {
-            services.AddSingleton<IRepository<Item>>(serviceProvider =>
+            services.AddSingleton<IRepository<T>>(serviceProvider =>
             {
                 var database = serviceProvider.GetService<IMongoDatabase>();
                 if (database != null)
                 {
-                    return new MongoRepository<Item>(database, collectionName);
+                    return new MongoRepository<T>(database, collectionName);
                 }
                 else
                 {

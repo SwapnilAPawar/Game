@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Game.Catalog.Service.Dtos;
 using Game.Catalog.Service.Entities;
-using Game.Catalog.Service.Repositories;
+using Game.Common;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Game.Catalog.Service.Controllers

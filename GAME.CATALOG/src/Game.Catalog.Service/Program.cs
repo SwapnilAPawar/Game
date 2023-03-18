@@ -1,10 +1,5 @@
 using Game.Catalog.Service.Entities;
-using Game.Catalog.Service.Repositories;
-using Game.Catalog.Service.Settings;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
-using MongoDB.Bson.Serialization.Serializers;
-using MongoDB.Driver;
+using Game.Common.MongoDB;
 
 var builder = WebApplication.CreateBuilder(args);
 

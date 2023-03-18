@@ -44,3 +44,29 @@ to confirm docker image is up and running by excuting "docker ps" command in ter
 
 Dependency injection configued
 Configuration system to read from app setting enabled
+
+
+dotnet new classlib -n Game.Common
+#common class library project with common code that could be shared accross microservices
+
+packages addded
+dotnet add package MongoDB.driver
+dotnet add package Microsoft.Extensions.Configuration
+dotnet add package Microsoft.Extensions.Configuration.Binder
+dotnet add package Microsoft.Extensions.DependencyInjection
+
+to create nuget package of library project
+dotnet pack -o ..\..\..\packages\
+
+-o ..\..\..\packages\ => output placed in specified.
+
+
+added a nuget config file project specific to add nuget source for projects under it.
+	dotnet new nugetconfig
+or
+can add source by executing command
+	dotnet nuget add source <folder path> -n <name>
+	
+add ne custom nuget package using below command
+
+dotnet add package Game.Common 
