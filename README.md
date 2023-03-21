@@ -134,3 +134,8 @@ docker-compose up -d
 ```
 
 dotnet new webapi -n Game.Inventory.Service
+
+Use polly nuget to handle transient failures in .net application
+```powershell
+dotnet add package Microsoft.Extensions.Http.Polly
+```
