@@ -14,10 +14,12 @@ var jitterer = new Random();
 
 //httpClient dependency registration
 //Or - if failed due to timeout issues then go ahead and try again
-//AddTransientHttpErrorPolicy - 
+//AddTransientHttpErrorPolicy - WaitAndRetryAsync
 //retry for 5 times with exponential delay time for 2 raised to retry attempt count + random value as fail time cannot be exact 2,4,8 etc.
 //Also it will avoid overwhelming/overloading of dependent services
 //onRetry(optional) parameter to log retry messages. can be removed in prod app as it creates new service provider is created.
+//AddTransientHttpErrorPolicy - AdvancedCircuitBreakerAsync
+//if 3 consecutive errors occur, the circuit is cut for 30 seconds:
 //AddPolicyHandler - 
 //wait for 1 sec for any http response. else return message.
 //Here sequence is important
@@ -31,7 +33,21 @@ builder.Services.AddHttpClient<CatalogClient>(client =>
     onRetry: (outcome, timeSpan, retryAttempt) =>
     {
         var serviceProvider = builder.Services.BuildServiceProvider();
-        serviceProvider.GetService<ILogger<CatalogClient>>()?.LogWarning($"Delay for {timeSpan.TotalSeconds} seconds, then making retry {retryAttempt}");
+        serviceProvider.GetService<ILogger<CatalogClient>>()?.LogWarning($"Delay for {timeSpan.TotalSeconds} seconds, then making retry {retryAttempt}.");
+    }
+))
+.AddTransientHttpErrorPolicy(policyBuilder => policyBuilder.Or<TimeoutRejectedException>().CircuitBreakerAsync(
+    3,
+    TimeSpan.FromSeconds(30),
+    onBreak: (outcome, timeSpan) =>
+    {
+        var serviceProvider = builder.Services.BuildServiceProvider();
+        serviceProvider.GetService<ILogger<CatalogClient>>()?.LogWarning($"Opening the circuit for {timeSpan.TotalSeconds} seconds...");
+    },
+    onReset: () =>
+    {
+        var serviceProvider = builder.Services.BuildServiceProvider();
+        serviceProvider.GetService<ILogger<CatalogClient>>()?.LogWarning($"Closing the circuit...");
     }
 ))
 .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(1));

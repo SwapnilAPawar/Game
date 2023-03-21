@@ -135,7 +135,13 @@ docker-compose up -d
 
 dotnet new webapi -n Game.Inventory.Service
 
-Use polly nuget to handle transient failures in .net application
+## timeouts and retries with exponential backoff.
+Dependent service might some time take time to respond. which will result in delay to client. But if this delay exceeds might result in bad user experience.
+So I have implemented policy for timeout and retries using polly nuget.
+polly nuget helps to handle transient failures in .net application
 ```powershell
 dotnet add package Microsoft.Extensions.Http.Polly
 ```
+
+## Implemented Circuit breaker pattern to avoid resource exhaustion.
+Some time there might be network outage which may cause long down time. During which if there are continue requests attempts done this may make requester as well as responder service unavailable for further requests.
