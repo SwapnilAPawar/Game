@@ -1,12 +1,17 @@
 using Game.Catalog.Service.Entities;
+using Game.Common.MassTransit;
 using Game.Common.MongoDB;
+using Game.Common.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
+var serviceSettings = builder.Configuration.GetSection(nameof(ServiceSettings)).Get<ServiceSettings>();
 //Register dependencies
-builder.Services.AddMongo().AddRepository<Item>("item");
+builder.Services.AddMongo()
+                .AddRepository<Item>("item")
+                .AddMassTransitWithRabbitMQ();
+
 
 builder.Services.AddControllers(options =>
 {

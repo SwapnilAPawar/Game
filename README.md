@@ -145,3 +145,92 @@ dotnet add package Microsoft.Extensions.Http.Polly
 
 ## Implemented Circuit breaker pattern to avoid resource exhaustion.
 Some time there might be network outage which may cause long down time. During which if there are continue requests attempts done this may make requester as well as responder service unavailable for further requests.
+
+## Synchronous Communication
+When we have direct communication between different services is considered to be synchronous communication. As failure of one service may result in failure of dependent service and might eventually make most of the system unavailable. This will result in
+1. Increased Latency
+2. Partial Failure Amplification
+3. Reduced SLA
+
+## Asynchronous communication
+- Client does not wait for a response in timely manner.
+- There might be no response at all.
+- Usually involves use of light weight message broker.
+- Message broker should have high availability.
+- Messages can be sent to message broker and received by
+    - Single Receiver(asynchronous command)
+    - Multiple Receiver(publish/subscribe events)
+
+One of the Key benefit of using asynchronous communication is it enforces microservices autonomy.
+
+### Microservices autonomy
+- Here client talks to a service. 
+- Service will immediately acknowledge to the client of successful reception o request.
+- Service does not directly talks to it dependent service.
+- It will send and asynchronous message to the broker.
+- The dependent service will consume the message and will reply back to the same broker.
+- Called Service can receive reply messages from broker and perform updates.
+- Client can request for update or Called service can revert back to reply url.
+
+#### Advantages of Asynchronous communication
+- If one of the service fails it won't have impact on other services.
+- Partial Failure won't propagate
+- Independent service SLA
+- Microservices Autonomy enforced
+
+#### Dependency
+- Highly available message broker
+
+### Asynchronous propagation of data
+Here the service publishes an event each time a record is created/updated/deleted.
+Client service can listen to this event and create collection of records in its own database.
+Since the message broker is highly available the client service data should consistent with regards to source service data.
+This helps to provide immediate reply to client request with data from its own database.
+
+## RabbitMQ and MassTransit
+RabbitMQ
+RabbitMQ introduces concept of exchanges similar mailbox.
+Service wants to publish messages, it will send it to RabbitMQ exchange
+With appropriate bindings in place RabbitMQ exchange will distribute messages to the configured queue
+From there RabbitMQ will take care of delivering the messages to any subscribed service.
+### Advantages of RabbitMQ
+1. Lightweight
+2. Supports Advanced Message Queuing Protocol(AMQP)
+3. Easy to run locally
+4. popular in open source community.
+
+We can directly use RabbitMQ in our by creating exchanges and queues and configuring bindings to ensure messages are properly routed.
+This will make our code tied to RabbitMQ. So, later if we decide to use some other message broker it will result in a lot of code changes. To avoid this we will be using MassTransit.
+
+## MassTransit 
+MassTransit is a popular open source distributed application framework for .Net.
+It can take care of most of the heritage mq configuration and able to integrate to multiple other message brokers. 
+It allows our service to connect to higher layer of broker agnostic apis.
+It introduces a concept of publisher and consumer.
+
+
+We need to define contracts for messaging between different services that uses asynchronous communication.
+We will create a separate class library for this. So that we can package and share this with other services.
+``` powershell
+dotnet new classlib -n Game.Catalog.Contracts
+```
+Adding reference in Game.Catalog.Service
+``` powershell
+dotnet add reference ..\Game.Catalog.Contracts\Game.Catalog.Contracts.csproj
+```
+
+Adding MassTransit nuget packages in Game.Catalog.Service
+``` powershell
+dotnet add package MassTransit.AspNetCore
+dotnet add package MassTransit.RabbitMQ
+```
+
+RabbitMQ configuration done in Docker compose
+5672 port will be used to publish/consume messages into RabbitMQ
+15672 used to go to portal
+specifying hostname is important or rabbitmq will save in location with random name each time we start it
+
+Setting package version when changes deployed
+``` powershell
+dotnet pack -p:PackageVersion=1.0.1  -o ..\..\..\packages\
+```

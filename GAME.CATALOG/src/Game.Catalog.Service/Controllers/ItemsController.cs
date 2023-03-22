@@ -1,7 +1,9 @@
 using Game.Catalog.Service.Dtos;
 using Game.Catalog.Service.Entities;
 using Game.Common;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
+using Game.Catalog.Contracts;
 
 namespace Game.Catalog.Service.Controllers
 {
@@ -10,10 +12,12 @@ namespace Game.Catalog.Service.Controllers
     public class ItemsController : ControllerBase
     {
         private readonly IRepository<Item> itemRepository;
+        private readonly IPublishEndpoint publishEndpoint;
 
-        public ItemsController(IRepository<Item> itemRepository)
+        public ItemsController(IRepository<Item> itemRepository, IPublishEndpoint publishEndpoint)
         {
             this.itemRepository = itemRepository;
+            this.publishEndpoint = publishEndpoint;
         }
 
         [HttpGet]
@@ -45,6 +49,7 @@ namespace Game.Catalog.Service.Controllers
                 CreatedOn = DateTimeOffset.UtcNow,
             };
             await itemRepository.CreateAsync(item);
+            await publishEndpoint.Publish(new CatalogItemCreated(item.Id, item.Name, item.Description));
             return CreatedAtAction(nameof(GetByIdAsync), new { id = item.Id }, item);
         }
 
@@ -61,7 +66,7 @@ namespace Game.Catalog.Service.Controllers
             existingItem.Price = updateDto.Price;
 
             await itemRepository.UpdateAsync(existingItem);
-
+            await publishEndpoint.Publish(new CatalogItemUpdated(existingItem.Id, existingItem.Name, existingItem.Description));
             return NoContent();
         }
 
@@ -74,6 +79,7 @@ namespace Game.Catalog.Service.Controllers
                 return NotFound("Record not found. Please verify if payload/parameters are correct.");
             }
             await itemRepository.RemoveAsync(existingItem);
+            await publishEndpoint.Publish(new CatalogItemDeleted(existingItem.Id));
             return NoContent();
         }
     }
