@@ -22,25 +22,12 @@ namespace Game.Common.MassTransit
                     var rabbitMQSettings = configuration.GetSection(nameof(RabbitMQSettings)).Get<RabbitMQSettings>();
                     configurator.Host(rabbitMQSettings!.Host);
                     configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter(serviceSettings!.ServiceName, false));
+                    configurator.UseMessageRetry(retryConfigurator =>
+                    {
+                        retryConfigurator.Interval(3, TimeSpan.FromSeconds(5));
+                    });
                 });
             });
-
-            //to start MassTransit service
-            // builder.Services.AddMassTransitHostedService();
-            // serviceCollection.AddOptions<MassTransitHostOptions>()
-            // .Configure(options =>
-            // {
-            //     // if specified, waits until the bus is started before
-            //     // returning from IHostedService.StartAsync
-            //     // default is false
-            //     options.WaitUntilStarted = true;
-
-            //     // if specified, limits the wait time when starting the bus
-            //     options.StartTimeout = TimeSpan.FromSeconds(10);
-
-            //     // if specified, limits the wait time when stopping the bus
-            //     options.StopTimeout = TimeSpan.FromSeconds(30);
-            // });
             return serviceCollection;
         }
     }
