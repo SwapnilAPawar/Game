@@ -53,7 +53,7 @@ internal class Program
         //retry for 5 times with exponential delay time for 2 raised to retry attempt count + random value as fail time cannot be exact 2,4,8 etc.
         //Also it will avoid overwhelming/overloading of dependent services
         //onRetry(optional) parameter to log retry messages. can be removed in prod app as it creates new service provider is created.
-        //AddTransientHttpErrorPolicy - AdvancedCircuitBreakerAsync
+        //AddTransientHttpErrorPolicy - CircuitBreakerAsync
         //if 3 consecutive errors occur, the circuit is cut for 30 seconds:
         //AddPolicyHandler - 
         //wait for 1 sec for any http response. else return message.

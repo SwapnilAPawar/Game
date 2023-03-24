@@ -1,9 +1,56 @@
-# Game
+# Game<!-- omit from toc -->
 This is a simple application which demonstrates the implementation microservices architecture.
-I have implemented two web api for general game application. 
+I have implemented two web api as mentioned below for general game application. I have established asynchronous communication between this services using RabbitMQ and MassTransit.
+
+**Web Api/Service**
 1. Catalog service that provide details of different stuff that players can buy while playing.
 2. Inventory service that provides current inventory information of a player.
 
+## Table of Contents <!-- omit from toc -->
+- [Concepts](#concepts)
+  - [Microservices](#microservices)
+    - [Advantages of Microservices](#advantages-of-microservices)
+    - [Disadvantages of Microservices](#disadvantages-of-microservices)
+  - [Synchronous Communication](#synchronous-communication)
+  - [Asynchronous communication](#asynchronous-communication)
+    - [Microservices autonomy](#microservices-autonomy)
+      - [Advantages of Asynchronous communication](#advantages-of-asynchronous-communication)
+      - [Dependency](#dependency)
+    - [Asynchronous propagation of data](#asynchronous-propagation-of-data)
+  - [RabbitMQ and MassTransit](#rabbitmq-and-masstransit)
+    - [Advantages of RabbitMQ](#advantages-of-rabbitmq)
+  - [MassTransit](#masstransit)
+  - [Docker Compose](#docker-compose)
+- [Solution Structure:](#solution-structure)
+  - [Game.Catalog.Contracts](#gamecatalogcontracts)
+  - [Game.Catalog.Service](#gamecatalogservice)
+  - [Game.Common](#gamecommon)
+  - [Game.Infra](#gameinfra)
+  - [Game.Inventory.Service](#gameinventoryservice)
+- [Additional Configuration](#additional-configuration)
+  - [Trusting Dotnet certificate](#trusting-dotnet-certificate)
+  - [For Running Profile](#for-running-profile)
+  - [Project Specific Nuget Source](#project-specific-nuget-source)
+  - [Configuration](#configuration)
+    - [Dependency Injection](#dependency-injection)
+    - [Timeouts and Retries with exponential back off.](#timeouts-and-retries-with-exponential-back-off)
+    - [Circuit Breaker Pattern](#circuit-breaker-pattern)
+
+## Pre requisites
+I have implemented this solution on a system having Microsoft OS. Below are software/application used to develop the application
+1. <a href="https://code.visualstudio.com/download" target="_blank">Visual Studio Code</a>
+2. <a href="https://www.docker.com/products/docker-desktop/" target="_blank">Docker Desktop</a>
+
+## Technical Stack
+1. Web API
+2. Generics
+3. .Net 7
+4. C#
+5. MongoDB
+6. RabbitMQ
+7. MassTransit
+
+# Concepts
 ## Microservices
 Microservices is an architectural approach for building applications where we create and deploy service/api for each core  independently. Microservice architecture is distributed and loosely coupled, so one component’s failure will not break the whole app. Independent components work together and communicate with well-defined API contracts. This helps meet rapidly changing business needs and build new functionalities faster.
 
@@ -19,132 +66,6 @@ Microservices is an architectural approach for building applications where we cr
 1. Higher Complexity in tracking errors
 2. Increased Network Traffic as the services depend on network on communication with each other.
 3. Limited Reuse of Code
-
-## Project Structure:
-1. Game.Catalog - Web API
-2. Game.Common - Class Library used as Nuget.
-3. Game.Infra - For maintaining docker dependencies.
-4. Game.Inventory - Web API. 
-
-## Pre requisites
-I have implemented this solution on a system having Microsoft OS. Below are software/application used to develop the application
-1. Visual Studio Code
-2. Docker Desktop
-
-## Technical Stack
-1. Microservices architecture
-2. Repository pattern
-3. Web API
-4. Generics
-6. .Net 7
-7. C#
-8. MongoDB
-
-
-
-
-
-To add dotnet certificate to trusted execute below command
-```powershell
-dotnet dev-certs https --trust
-```
-**For Running Profile**
-reference - https://learn.microsoft.com/en-us/aspnet/core/fundamentals/environments?view=aspnetcore-7.0#development-and-launchsettingsjson
-which ever profile you want to be default should be added first under "profiles". 
-It will be picked up when no profile is mentioned explicitly for run command as below
-```powershell
-dotnet run --launch-profile "SampleApp"
-```
-
-**Docker**
-
-Using MongoDB Docker Image from Docker Hub. as it as pre requisite.
-
-Using Docker engine to download and run the image on the local system
-
-Once the docker is executed using run command it will create a container. This will act as fully running MongoDb server for the service.
-
-Database will be out side of container. As we do not want to have database deleted if the container is destroyed.
-
-
-## To create and run docker container
-```powershell
-docker run -d --rm --name mongo -p 27017:27017 -v mongodbdata:/data/db mongo
-```
-
-+ **docker run**- to run the docker
-+ **-d** - so that we are not attached to docker process all the time
-+ **--rm** to delete container if we stop it
-+ **--name <any name>** to assign name of the container
-+ **-p <external port>:<internal port>** external port to reach the container mapped to MongoDB port within the container. default 27017 port number used by mongo db. external port can be any port number.
-+ **-v mongodbdata:/data/db** volume where mongo db will store data. so when ever mongo db tries to store data files in location /data/db it will be stored in location mongodbdata out side the container
-+ **mongo** - name of the docker e-machine we want to run
-
-to confirm docker image is up and running by executing below command in terminal.
-```powershell
-docker ps
-```
-
-Dependency injection configured
-Configuration system to read from app setting enabled
-
-```powershell
-dotnet new classlib -n Game.Common
-```
-#common class library project with common code that could be shared across microservices
-
-## Packages added
-```powershell
-dotnet add package MongoDB.driver
-dotnet add package Microsoft.Extensions.Configuration
-dotnet add package Microsoft.Extensions.Configuration.Binder
-dotnet add package Microsoft.Extensions.DependencyInjection
-```
-to create nuget package of library project
-```powershell
-dotnet pack -o ..\..\..\packages\
-```
-
--o ..\..\..\packages\ => output placed in specified.
-
-
-added a nuget config file project specific to add nuget source for projects under it.
-```powershell
-dotnet new nugetconfig
-```
-or
-can add source by executing command
-```powershell
-dotnet nuget add source <folder path> -n <name>
-```
-	
-add ne custom nuget package using below command
-```powershell
-dotnet add package Game.Common 
-```
-there will be multiple dependency that we will need to run on docker 
-so created GAME.INFRA project to have docker compose
-docker compose will have all the dependency listed and can be started with single command
-```powershell
-docker-compose up
-```
-without comments/output
-```powershell
-docker-compose up -d
-```
-
-dotnet new webapi -n Game.Inventory.Service
-
-## timeouts and retries with exponential backoff.
-Dependent service might some time take time to respond. which will result in delay to client. But if this delay exceeds might result in bad user experience.
-So I have implemented policy for timeout and retries using polly nuget.
-polly nuget helps to handle transient failures in .net application
-```powershell
-dotnet add package Microsoft.Extensions.Http.Polly
-```
-
-## Implemented Circuit breaker pattern to avoid resource exhaustion.
-Some time there might be network outage which may cause long down time. During which if there are continue requests attempts done this may make requester as well as responder service unavailable for further requests.
 
 ## Synchronous Communication
 When we have direct communication between different services is considered to be synchronous communication. As failure of one service may result in failure of dependent service and might eventually make most of the system unavailable. This will result in
@@ -208,29 +129,169 @@ It can take care of most of the heritage mq configuration and able to integrate 
 It allows our service to connect to higher layer of broker agnostic apis.
 It introduces a concept of publisher and consumer.
 
+## Docker Compose
+Compose is a tool for defining and running multi-container Docker applications. With Compose, you use a YAML file to configure your application’s services. Then, with a single command, you create and start all the services from your configuration.
 
+Compose works in all environments: production, staging, development, testing, as well as CI workflows. It also has commands for managing the whole lifecycle of your application:
+
+- Start, stop, and rebuild services
+- View the status of running services
+- Stream the log output of running services
+- Run a one-off command on a service
+
+**The key features of Compose that make it effective are:**
+
+- Have multiple isolated environments on a single host
+- Preserves volume data when containers are created
+- Only recreate containers that have changed
+- Supports variables and moving a composition between environments
+
+
+# Solution Structure:
+1. Game.Catalog - 
+    - src
+        - Game.Catalog.Contracts - Class Library used as Nuget.
+        - Game.Catalog.Service - Web API
+2. Game.Common - 
+    - src
+        - Game.Common - Class Library used as Nuget.
+3. Game.Infra - For maintaining docker dependencies.
+4. Game.Inventory - 
+    - src
+        - Game.Inventory.Service - Web API. 
+
+## Game.Catalog.Contracts
 We need to define contracts for messaging between different services that uses asynchronous communication.
 We will create a separate class library for this. So that we can package and share this with other services.
 ``` powershell
+# to create project
 dotnet new classlib -n Game.Catalog.Contracts
-```
-Adding reference in Game.Catalog.Service
-``` powershell
-dotnet add reference ..\Game.Catalog.Contracts\Game.Catalog.Contracts.csproj
-```
 
-Adding MassTransit nuget packages in Game.Catalog.Service
-``` powershell
-dotnet add package MassTransit.AspNetCore
-dotnet add package MassTransit.RabbitMQ
-```
+#to create nuget package of library project
+dotnet pack -o <output directory path>
 
-RabbitMQ configuration done in Docker compose
-5672 port will be used to publish/consume messages into RabbitMQ
-15672 used to go to portal
-specifying hostname is important or rabbitmq will save in location with random name each time we start it
+#In my case
+dotnet pack -o ..\..\..\packages\
 
-Setting package version when changes deployed
-``` powershell
+#Also we should specify version number while packaging new changes. This helps our service to know about the new changes.
 dotnet pack -p:PackageVersion=1.0.1  -o ..\..\..\packages\
 ```
+
+## Game.Catalog.Service
+This is a web api application. It will help to manage inventory of a user. 
+``` powershell
+# to create project
+dotnet new webapi -n Game.Catalog.Service
+
+#Adding reference in Game.Catalog.Service
+dotnet add reference ..\Game.Catalog.Contracts\Game.Catalog.Contracts.csproj
+
+# add custom nuget package using below command
+dotnet add package Game.Common
+```
+
+## Game.Common
+This is a class library project with common code that could be shared across microservices by creating nuget package.
+
+```powershell
+# to create project
+dotnet new classlib -n Game.Common
+
+#add reference packages
+dotnet add package MongoDB.driver
+dotnet add package Microsoft.Extensions.Configuration
+dotnet add package Microsoft.Extensions.Configuration.Binder
+dotnet add package Microsoft.Extensions.DependencyInjection
+
+#to create nuget package of library project
+dotnet pack -o <output directory path>
+
+#In my case
+dotnet pack -o ..\..\..\packages\
+
+#Also we should specify version number while packaging new changes. This helps our service to know about the new changes.
+dotnet pack -p:PackageVersion=1.0.1  -o ..\..\..\packages\
+```
+
+## Game.Infra
+This is folder that contains the docker compose file. This file contains configuration for creating all the containers in single command execution. Here we have following container configured
+1. Mongo with following configuration
+   - Ports:
+     - 5672 port for communication
+   - Volume: specifying volume is important or Mongo will save in data in random location. Also it helps to keep data safe even after the container is destroyed.
+
+2. RabbitMQ with following configuration
+   - Ports:
+     - 5672 port will be used to publish/consume messages into RabbitMQ
+     - 15672 used to go to portal
+   - Hostname: specifying hostname is important or RabbitMQ will save in location with random name each time we start it
+   - Volume: specifying volume is important or RabbitMQ will be saved in random location
+
+    **Note:** We can access RabbitMQ portal http://localhost:15672 using credentials
+   - Username: guest
+   - Password: guest
+
+```powershell
+# to execute docker compose
+docker-compose up
+
+# OR to execute without comments/output
+docker-compose up -d
+```
+
+## Game.Inventory.Service
+This is a web api application. It will help to manage inventory of a user. 
+``` powershell
+# to create project
+dotnet new webapi -n Game.Inventory.Service
+
+# add custom nuget package using below command
+dotnet add package Game.Common
+dotnet add package Game.Catalog.Contracts 
+```
+
+# Additional Configuration
+
+## Trusting Dotnet certificate
+Since api are running using dotnet certificates while debugging we will see browser warning about heading to untrusted website. So we will always have to ask it to proceed. To avoid this additional checks we can add our dotnet certificate to trusted group. Below command can be used for that
+```powershell
+dotnet dev-certs https --trust
+```
+## For Running Profile
+When we create the project launchSetting.json will have a few profiles created for us. To make a profile default it should be added first under "profiles". It will be picked up when no profile is mentioned explicitly. To specify specific profile for execution we can use below command
+```powershell
+dotnet run --launch-profile "<Profile Name>"
+```
+reference - https://learn.microsoft.com/en-us/aspnet/core/fundamentals/environments?view=aspnetcore-7.0#development-and-launchsettingsjson
+
+## Project Specific Nuget Source
+We can create a Nuget config file that can have our custom Nuget source location. This will help us to add our Nuget to projects just like the regular packages
+```powershell
+# Creating Nuget Config file
+dotnet new nugetconfig
+
+# Adding source
+dotnet nuget add source <folder path> -n <name>
+```
+
+## Configuration
+1. Dependency Injection
+2. Timeouts and Retries with exponential back off
+3. Circuit Breaker Pattern
+
+### Dependency Injection
+Dependency Injection (DI) software design pattern is a technique for achieving Inversion of Control (IoC) between classes and their dependencies. I have made use of .NET's built-in DI, along with configuration, logging, and the options pattern.
+
+### Timeouts and Retries with exponential back off.
+Dependent service might some time take time to respond. This will result in delayed response to client. But if this delay exceeds might result in bad user experience. So I have implemented policy for timeout and retries using polly nuget. Polly nuget helps to handle transient failures in .net application
+```powershell
+dotnet add package Microsoft.Extensions.Http.Polly
+```
+
+### Circuit Breaker Pattern
+Some time there might be network outage or service issues which may cause long down time. During which if there are continue requests attempts done this may make requester as well as responder service unavailable for further requests.
+Circuit breaker will prevent the service from performing requests that are likely to fail.
+It will prevent the service from resource exhaustion.
+It will help to avoid overwhelming of dependency.
+
+It will open circuit for specified wait time if request failure reaches the threshold count. After waiting it allow one request to go through to check if the dependent service is up and running. if yes, it will close the circuit and allow all requests to go through.
